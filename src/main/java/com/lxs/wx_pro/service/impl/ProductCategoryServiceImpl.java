@@ -23,5 +23,6 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
         return ResultResponse.success(productCategoryList.stream().map(productCategory ->
                 ProductCategoryDto.build(productCategory)
         ).collect(Collectors.toList()));
+
     }
 }

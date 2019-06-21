@@ -10,9 +10,12 @@ import com.lxs.wx_pro.service.ProductCategoryService;
 import com.lxs.wx_pro.service.ProductInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,11 +24,12 @@ public class ProductInfoServiceImpl implements ProductInfoService {
     private ProductCategoryService productCategoryService;
     @Autowired
     private ProductInfoRepository productInfoRepository;
+
     @Override
     public ResultResponse queryList() {
         ResultResponse<List<ProductCategoryDto>> categoryServiceResult = productCategoryService.findAll();
         List<ProductCategoryDto> categorydtoList = categoryServiceResult.getData();
-        if(CollectionUtils.isEmpty(categorydtoList)){
+        if (CollectionUtils.isEmpty(categorydtoList)) {
             return categoryServiceResult;//如果分类列表为空 直接返回了
         }
         //获得类目编号集合
@@ -40,5 +44,44 @@ public class ProductInfoServiceImpl implements ProductInfoService {
             return categorydto;
         }).collect(Collectors.toList());
         return ResultResponse.success(finalResultList);
+    }
+
+    /**
+     * 按照商品id查询商品信息
+     *
+     * @param id
+     * @return
+     */
+    @Override
+    public ResultResponse<ProductInfo> queryById(String id) {
+        //对id坐判空
+        if (StringUtils.isEmpty(id)) {
+            //返回空id的错误信息，通过定义好的枚举
+            return ResultResponse.fail(ResultEnums.PARAM_ERROR.getMsg() + "::" + id);
+        }
+        //查询出这个商品
+        Optional<ProductInfo> byId = productInfoRepository.findById(id);
+        //判断商品是否存在
+        if (!byId.isPresent()) {
+            return ResultResponse.fail(id + ":" + ResultEnums.NOT_EXITS.getMsg());
+        }
+        //判断商品是否已经下架
+        if (byId.get().getProductStatus() == ResultEnums.PRODUCT_DOWN.getCode()) {
+            return ResultResponse.fail(ResultEnums.PRODUCT_DOWN.getMsg() + "::" + id);
+        }
+
+        return ResultResponse.success(byId.get());
+    }
+
+    /**
+     * 更新一个商品
+     *
+     * @param productInfo
+     */
+    @Override
+    @Transactional
+    public void updateProductInfo(ProductInfo productInfo) {
+        productInfoRepository.save(productInfo);
+        //调用save方法对商品进行保存
     }
 }
