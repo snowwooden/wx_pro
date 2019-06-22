@@ -3,6 +3,8 @@ package com.lxs.wx_pro.controller;
 import com.google.common.collect.Maps;
 import com.lxs.wx_pro.commons.ResultResponse;
 import com.lxs.wx_pro.dtos.OrderMasterDto;
+import com.lxs.wx_pro.param.OneOrderDetail;
+import com.lxs.wx_pro.param.OrderList;
 import com.lxs.wx_pro.service.OrderMasterService;
 import com.lxs.wx_pro.utils.JsonUtil;
 import io.swagger.annotations.Api;
@@ -28,9 +30,6 @@ public class OrderMasterController {
     private OrderMasterService orderMasterService;
     @PostMapping("create")
     @ApiOperation(value = "创建订单接口", httpMethod = "POST", response = ResultResponse.class)
-    //@Valid配合刚才在DTO上的JSR303注解完成校验
-    //注意：JSR303的注解默认是在Contorller层进行校验
-    //如果想在service层进行校验 需要使用javax.validation.Validator  也就是上个项目用到的工具
     public ResultResponse create(
             @Valid @ApiParam(name="订单对象",value = "传入json格式",required = true)
                     OrderMasterDto orderMasterDto, BindingResult bindingResult){
@@ -43,5 +42,20 @@ public class OrderMasterController {
             return  ResultResponse.fail(map);
         }
         return orderMasterService.insertOrder(orderMasterDto);
+    }
+    @PostMapping("list")
+    @ApiOperation(value = "查询订单列表", httpMethod = "POST", response = ResultResponse.class)
+    public ResultResponse orderList(OrderList list){
+       return orderMasterService.getOrderList(list);
+    }
+
+    @PostMapping("detail")
+    @ApiOperation(value = "查询一个订单的详情", httpMethod = "POST", response = ResultResponse.class)
+    public ResultResponse getOneOrderDetail(OneOrderDetail detail){
+       return orderMasterService.getOrderByOpenIdandOrderId(detail);
+    }@PostMapping("cancel")
+    @ApiOperation(value = "查询一个订单的详情", httpMethod = "POST", response = ResultResponse.class)
+    public ResultResponse cancelOneOrder(OneOrderDetail detail){
+       return orderMasterService.cancelanOrder(detail);
     }
 }
