@@ -29,6 +29,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 关于订单的服务
@@ -107,6 +109,7 @@ public class OrderMasterServiceImpl implements OrderMasterService {
 
     /**
      * 分页查询处订单列表
+     *
      * @param openId
      * @param pageable
      * @return
@@ -121,9 +124,9 @@ public class OrderMasterServiceImpl implements OrderMasterService {
         //根据每一个订单的订单id查询对应的订单详情id
         return orderMasters;
     }
-
     /**
      * 封装查询的订单列表
+     *
      * @param orderList
      * @return
      */
@@ -133,36 +136,31 @@ public class OrderMasterServiceImpl implements OrderMasterService {
         //调用查询订单列表
         Pageable request = new PageRequest(orderList.getPage(), orderList.getSize());
         List<OrderMaster> masters = findAllByOpenId(orderList.getOpenid(), request);
-        //更具订单详情id查询出订单项列表
-        //判空
-        if (masters.isEmpty()){
+        //
+        if (masters.isEmpty()) {
             return ResultResponse.success(Lists.newArrayList());
         }
-        //提供集合来装这些订单
-        List<OrderListDto> returnList = Lists.newArrayList();
-        for (OrderMaster master : masters) {
-            //更具orderId查询对应订单的订单项
-            List<OrderDetail> orderDetailLists = orderDetailRepository.findOrderDetailByOrderId(master.getOrderId());
-            //封装这个list个订单进订单dto
-            OrderListDto orderListDto =OrderListDto.builder().orderId(master.getOrderId()).buyerName(master.getBuyerName())
-                    .buyerPhone(master.getBuyerPhone())
-                    .buyerAddress(master.getBuyerAddress())
-                    .buyerOpenid(master.getBuyerOpenid())
-                    .orderAmount(master.getOrderAmount())
-                    .orderStatus(master.getOrderStatus())
-                    .payStatus(master.getPayStatus())
-                    .createTime(master.getCreateTime())
-                    .updateTime(master.getUpdateTime())
-                    .orderDetailList(orderDetailLists).build();
-            System.out.println(orderListDto);
-            returnList.add(orderListDto);
-        }
+        //转DTO
+        List<OrderListDto> orderListDtos = masters.stream().map(OrderMaster -> OrderListDto.turnToDto(OrderMaster)).collect(Collectors.toList());
+        //判空
+        //获取所有的orderId
+        List<String> orderIds = orderListDtos.stream().map(OrderListDto::getOrderId).collect(Collectors.toList());
+       //获取所有的订单详情
+        List<OrderDetail> orderDetailByOrOrderIdIn = orderDetailRepository.findOrderDetailByOrOrderIdIn(orderIds);
+       //将orderList赋值具体的订单详情列表
+        orderDetailByOrOrderIdIn.stream()
+                .forEach(OrderDetail -> orderListDtos.stream()
+                        .forEach(orderListDto -> {
+            if (orderListDto.getOrderId().equals(OrderDetail.getOrderId())){
+                orderListDto.getOrderDetailList().add(OrderDetail);
+            }
+        } ));
         //将订单返回为需要的格式
-        return ResultResponse.success(returnList);
+        return ResultResponse.success(orderListDtos);
     }
-
     /**
      * 查询一个订单详情
+     *
      * @param detail
      * @return
      */
@@ -173,39 +171,32 @@ public class OrderMasterServiceImpl implements OrderMasterService {
         OrderMaster order = orderMasterRepository.
                 findOrderMasterByBuyerOpenidAndOrderId(detail.getOpenid(), detail.getOrderId());
         //判空
-        if (order==null){
-            throw  new CustomException(OrderEnums.ORDER_NOT_EXITS.getMsg());
+        if (order == null) {
+            throw new CustomException(OrderEnums.ORDER_NOT_EXITS.getMsg());
         }
         //根据具体订单信息的orderiD去订单项表中查询具体的信息
         List<OrderDetail> details = orderDetailRepository.findOrderDetailByOrderId(order.getOrderId());
         //将信息组装回去
-        OrderListDto orderListDto = OrderListDto.builder().orderId(order.getOrderId()).buyerName(order.getBuyerName())
-                .buyerPhone(order.getBuyerPhone())
-                .buyerAddress(order.getBuyerAddress())
-                .buyerOpenid(order.getBuyerOpenid())
-                .orderAmount(order.getOrderAmount())
-                .orderStatus(order.getOrderStatus())
-                .payStatus(order.getPayStatus())
-                .createTime(order.getCreateTime())
-                .updateTime(order.getUpdateTime())
-                .orderDetailList(details).build();
-        return ResultResponse.success(orderListDto);
+        OrderListDto dto = OrderListDto.turnToDto(order);
+        List<OrderDetail> list = dto.getOrderDetailList();
+          details.stream().map(orderDetail -> list.add(orderDetail)).collect(Collectors.toList());
+        return ResultResponse.success(dto);
     }
-
     /**
      * 取消一个订单
+     *
      * @param detail
      * @return
      */
     @Override
+    @Transactional
     public ResultResponse cancelanOrder(OneOrderDetail detail) {
         //参数验证//todo:参数验证未完成
         //更具信息拿到订单信息
         OrderMaster order = orderMasterRepository.
                 findOrderMasterByBuyerOpenidAndOrderId(detail.getOpenid(), detail.getOrderId());
         //根据订单的状态判断是否已经取消
-
-        if (order.getOrderStatus()!=OrderEnums.NEW.getCode()){
+        if (order.getOrderStatus() != OrderEnums.NEW.getCode()) {
             return ResultResponse.fail(OrderEnums.FINSH_CANCEL.getMsg());
         }
         //设置订单状态为失效的订单

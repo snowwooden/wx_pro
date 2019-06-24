@@ -14,4 +14,5 @@ import java.util.List;
 
 public interface OrderDetailRepository  extends JpaRepository<OrderDetail,String>, JpaSpecificationExecutor<OrderDetail> {
     List<OrderDetail> findOrderDetailByOrderId(String orderId);
+    List<OrderDetail> findOrderDetailByOrOrderIdIn(List<String> orders);
 }

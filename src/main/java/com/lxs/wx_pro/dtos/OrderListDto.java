@@ -17,7 +17,6 @@ import java.util.List;
 
 @Data
 @ApiModel("订单列表参数")
-@Builder
 public class OrderListDto {
     private String orderId;
 
@@ -41,9 +40,9 @@ public class OrderListDto {
 
     private List<OrderDetail> orderDetailList = Lists.newArrayList();
 
-   /* public static OrderListDto turnToDto(OrderMaster orderMaster) {
+    public static OrderListDto turnToDto(OrderMaster orderMaster) {
         OrderListDto dto = new OrderListDto();
         BeanUtils.copyProperties(orderMaster, dto);
         return dto;
-    }*/
+    }
 }

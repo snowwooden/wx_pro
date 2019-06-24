@@ -42,7 +42,8 @@ private TestDao testDao;
     @Test
     public void queryAllByOpenid() {
 
-        ResultResponse<OrderListDto> oXDaO1RMGiRJACn5Bsp0nkHEqQ_w = masterService.getOrderList(new OrderList("oXDaO1RMGiRJACn5Bsp0nkHEqQ_w", 1, 10));
+        ResultResponse<OrderListDto> oXDaO1RMGiRJACn5Bsp0nkHEqQ_w = masterService.getOrderByOpenIdandOrderId(new OneOrderDetail("oXDaO1RMGiRJACn5Bsp0nkHEqQ_w", "17268a8f76664500aca24f73466293bb"));
+        //ResultResponse<OrderListDto> oXDaO1RMGiRJACn5Bsp0nkHEqQ_w = masterService.getOrderList(new OrderList("oXDaO1RMGiRJACn5Bsp0nkHEqQ_w", 1, 10));
         Gson gson = new Gson();
         String s = gson.toJson(oXDaO1RMGiRJACn5Bsp0nkHEqQ_w);
         System.out.println(s);
